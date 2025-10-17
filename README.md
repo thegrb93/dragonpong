@@ -2,4 +2,4 @@
 CC pong with dragons
 
 # To run
-./main.lua
+./dragonpong/main.lua
