@@ -9,15 +9,15 @@ local Blit, Image, ImageAnimated, Monitor
 
 Blit = class {
 	init = function(self, txt, fg, bg)
-        local max = math.max(#txt, #fg, #bg)
-        if #txt==1 then txt=string.rep(txt, max) end
-        if #fg==1 then fg=string.rep(fg, max) end
-        if #bg==1 then bg=string.rep(bg, max) end
-        if #txt ~= #fg or #txt ~= #bg then error("Blit lengths not the same!") end
-        self.w = max
-        self.txt, self.txtrev = txt, string.reverse(txt)
-        self.fg, self.fgrev = fg, string.reverse(fg)
-        self.bg, self.bgrev = bg, string.reverse(bg)
+		local max = math.max(#txt, #fg, #bg)
+		if #txt==1 then txt=string.rep(txt, max) end
+		if #fg==1 then fg=string.rep(fg, max) end
+		if #bg==1 then bg=string.rep(bg, max) end
+		if #txt ~= #fg or #txt ~= #bg then error("Blit lengths not the same!") end
+		self.w = max
+		self.txt, self.txtrev = txt, string.reverse(txt)
+		self.fg, self.fgrev = fg, string.reverse(fg)
+		self.bg, self.bgrev = bg, string.reverse(bg)
 	end,
 	blit = function(self, periph, x, y, flipped)
 		x = round(x) y = round(y)
@@ -28,9 +28,9 @@ Blit = class {
 			periph.blit(self.txt, self.fg, self.bg)
 		end
 	end,
-    swapPallete = function(self, from, to)
-        return Blit(self.txt, self.fg, string.gsub(self.bg, from, to))
-    end
+	swapPallete = function(self, from, to)
+		return Blit(self.txt, self.fg, string.gsub(self.bg, from, to))
+	end
 }
 
 Image = class {
@@ -38,11 +38,11 @@ Image = class {
 		self.w = 0
 		self.h = 0
 		self.blits = {}
-        if filename then
-            self:load(filename)
-        end
+		if filename then
+			self:load(filename)
+		end
 	end,
-    load = function(self, filename)
+	load = function(self, filename)
 		local f = assert(io.open(filename..".txt", "r"))
 		for line in f:lines() do
 			if self.w==0 then self.w=#line end
@@ -53,8 +53,8 @@ Image = class {
 			self.h = self.h + 1
 		end
 		f:close()
-        self.ox, self.oy = self.w*-0.5, self.h*-0.5
-    end,
+		self.ox, self.oy = self.w*-0.5, self.h*-0.5
+	end,
 	blit = function(self, periph, x, y, flipped)
 		x = round(x+self.ox) y = round(y+self.oy)
 
@@ -68,39 +68,39 @@ Image = class {
 			end
 		end
 	end,
-    swapPallete = function(self, from, to)
-        local ret = Image()
-        ret.w, ret.h, ret.ox, ret.oy = self.w, self.h, self.ox, self.oy
-        for i, v in ipairs(self.blits) do
-            ret.blits[i] = v:swapPallete(from, to)
-        end
-        return ret
-    end
+	swapPallete = function(self, from, to)
+		local ret = Image()
+		ret.w, ret.h, ret.ox, ret.oy = self.w, self.h, self.ox, self.oy
+		for i, v in ipairs(self.blits) do
+			ret.blits[i] = v:swapPallete(from, to)
+		end
+		return ret
+	end
 }
 
 local FrameCounterAdvance = class {
 	init = function(self, imageanimated, framecounts, looped)
 		self.frames = imageanimated.frames
-        self.framecounts = framecounts
-        if #self.frames ~= #self.framecounts then
-            error("Expected frames and framecounts size to be equal!")
-        end
-        self.framei = 1
+		self.framecounts = framecounts
+		if #self.frames ~= #self.framecounts then
+			error("Expected frames and framecounts size to be equal!")
+		end
+		self.framei = 1
 		self.counter = 0
 		self.looped = looped~=false
 	end,
 	add = function(self, dt)
 		self.counter = self.counter + dt
-        while self.counter >= self.framecounts[self.framei] do
-            self.counter = self.counter - self.framecounts[self.framei]
-            if self.framei==#self.frames then
-                if self.looped then
-                    self.framei = 1
-                end
-            else
-                self.framei = self.framei + 1
-            end
-        end
+		while self.counter >= self.framecounts[self.framei] do
+			self.counter = self.counter - self.framecounts[self.framei]
+			if self.framei==#self.frames then
+				if self.looped then
+					self.framei = 1
+				end
+			else
+				self.framei = self.framei + 1
+			end
+		end
 	end,
 	blit = function(self, periph, x, y, flipped)
 		self.frames[self.framei]:blit(periph, x, y, flipped)
@@ -109,7 +109,7 @@ local FrameCounterAdvance = class {
 local RateAdvance = class {
 	init = function(self, imageanimated, animtime, looped)
 		self.frames = imageanimated.frames
-        self.animtime = animtime
+		self.animtime = animtime
 		self.t = 0
 		self.looped = looped~=false
 	end,
@@ -128,28 +128,28 @@ local RateAdvance = class {
 ImageAnimated = class {
 	init = function(self, filename, frames)
 		self.frames = {}
-        if filename then
-            for i=1, frames do
-                self.frames[i] = Image(filename..tostring(i))
-            end
-        end
+		if filename then
+			for i=1, frames do
+				self.frames[i] = Image(filename..tostring(i))
+			end
+		end
 	end,
 	new = function(self, type, ...)
-        if type=="frame" then
-		    return FrameCounterAdvance(self, ...)
-        elseif type=="rate" then
-            return RateAdvance(self, ...)
-        else
-            error("Invalid Type!")
-        end
+		if type=="frame" then
+			return FrameCounterAdvance(self, ...)
+		elseif type=="rate" then
+			return RateAdvance(self, ...)
+		else
+			error("Invalid Type!")
+		end
 	end,
-    swapPallete = function(self, from, to)
-        local ret = ImageAnimated()
-        for i, v in ipairs(self.frames) do
-            ret.frames[i] = v:swapPallete(from, to)
-        end
-        return ret
-    end
+	swapPallete = function(self, from, to)
+		local ret = ImageAnimated()
+		for i, v in ipairs(self.frames) do
+			ret.frames[i] = v:swapPallete(from, to)
+		end
+		return ret
+	end
 }
 
 Monitor = class {
@@ -169,4 +169,5 @@ Monitor = class {
 }
 
 return {Monitor = Monitor, Image = Image, ImageAnimated = ImageAnimated, Blit = Blit}
+
 
