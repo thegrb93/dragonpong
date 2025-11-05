@@ -92,41 +92,66 @@ local GoalCollider = class {
     end
 }
 
+local PhysCircleComponent = {
+    init = function(self, radius, linear, angular)
+		self.state = {0, 0, 0, 0, 0, 0}
+        self.radius = radius
+        self.linearInertia = linear
+        self.angularInertia = angular
+        self.colliders = {}
+    end,
+    set = function(self, x, y, a, dx, dy, da)
+        local state = self.state
+        state[1], state[2], state[3], state[4], state[5], state[6] = x, y, a, dx, dy, da
+    end,
+    step = function(self, fx, fy, fa, dt)
+        local state, colliders = self.state, self.colliders
+
+        state[4], state[5], state[6] = state[4]+fx*dt, state[5]+fy*dt, state[6]+fa*dt
+    
+        local dirx, diry = state[4]*dt, state[5]*dt
+        for i=1, 10 do
+            if math.abs(dirx)<1e-8 and math.abs(diry)<1e-8 then
+                dirx, diry = 0, 0
+                break
+            end
+        
+            local tmin = 1
+            local collider
+            for _, v in ipairs(colliders) do
+                local t = v:checkCollision(state, dirx, diry)
+                if t and t<tmin then tmin=t collider=v end
+            end
+            if not collider then break end
+            dirx, diry = collider:doCollision(state, dirx, diry, tmin)
+        end
+        state[1], state[2], state[3] = state[1] + dirx, state[2] + diry, (state[3]+state[6]*dt)%1
+    end,
+    doCollision = function(self, other)
+        local x1, x2 = self.state, other.state
+        local dx, dy = x2[1] - x1[1], x2[2] - x1[2]
+        local dvx, dvy = x2[4] - x1[4], x2[5] - x1[5]
+		local distSqr = dx^2+dy^2
+		if distSqr<(self.radius + 12)^2 then
+			local normdot = dvx*dx + dvy*dy
+			if normdot>0 then
+				local vnormx, vnormy = normdot*dx/distSqr, normdot*dy/distSqr
+
+				local tandot = dvx*(-dy) + dvy*dx - self.radius*x1[3]*math.sqrt(distSqr)
+				local vtanx, vtany = tandot*(x1[2] - x2[2])/distSqr, tandot*dx/distSqr
+
+				local m1, m2, m3, m4 = 5/(5+1), 1/(5+1), 1/(1+4), 4/(1+4)
+				x1[4], x1[5] = x1[4] + 2*m1*(vnormx-m3*vtanx), x1[5] + 2*m1*(vnormy-m3*vtany)
+				x2[4], x2[5] = x2[4] - 2*m2*(vnormy-m3*vtany), x2[5] - 2*m2*(vnormy-m3*vtany)
+				x1[3] = x1[3] + 2*m4*math.sqrt(vtanx^2+vtany^2)
+			end
+		end
+    end
+}
+
 return {
     WallCollider = WallCollider,
     CircleCollider = CircleCollider,
-    GoalCollider = GoalCollider
+    GoalCollider = GoalCollider,
+    PhysCircleComponent = PhysCircleComponent
 }
-
-local colliders = {
-    phys.WallCollider(-30, 4, 200, 4),
-    phys.WallCollider(200, 77, -30, 77),
-    phys.WallCollider(4, 23, 4, -30),
-    phys.WallCollider(4, 110, 4, 58),
-    phys.WallCollider(160, -30, 160, 23),
-    phys.WallCollider(160, 58, 160, 110),
-    phys.GoalCollider(0, 54, 0, 27),
-    phys.GoalCollider(168, 27, 168, 54),
-    phys.CircleCollider(0, 23, 4),
-    phys.CircleCollider(0, 58, 4),
-    phys.CircleCollider(164, 23, 4),
-    phys.CircleCollider(164, 58, 4),
-}
-
-local state = self.state
-for i=1, 10 do
-    if math.abs(dirx)<1e-8 and math.abs(diry)<1e-8 then
-        dirx, diry = 0, 0
-        break
-    end
-
-    local tmin = 1
-    local collider
-    for _, v in ipairs(colliders) do
-        local t = v:checkCollision(state, dirx, diry)
-        if t and t<tmin then tmin=t collider=v end
-    end
-    if not collider then break end
-    dirx, diry = collider:doCollision(state, dirx, diry, tmin)
-end
-state[1], state[2] = state[1] + dirx, state[2] + diry
