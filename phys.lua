@@ -130,11 +130,11 @@ local PhysCircleComponent = class {
     doCollision = function(self, other)
         local x1, x2 = self.state, other.state
         local dx, dy = x2[1] - x1[1], x2[2] - x1[2]
-        local dvx, dvy = x2[4] - x1[4], x2[5] - x1[5]
 		local distSqr = dx^2+dy^2
-		if distSqr<(self.radius + 12)^2 then
+		if distSqr<(self.radius + other.radius)^2 then
+            local dvx, dvy = x2[4] - x1[4], x2[5] - x1[5]
 			local normdot = dvx*dx + dvy*dy
-			if normdot>0 then
+			if normdot<0 then
 				local vnormx, vnormy = normdot*dx/distSqr, normdot*dy/distSqr
 
 				local tandot = dvx*(-dy) + dvy*dx - self.radius*x1[3]*math.sqrt(distSqr)
