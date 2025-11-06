@@ -4,9 +4,9 @@ local class = require("class")
 local function lineLineIntersect(x1, y1, dx1, dy1, x2, y2, dx2, dy2)
     local denom = dx1*dy2 - dy1*dx2
     if denom<=0 then return 1 end
-    local u = ((x3 - x1)*dy1 - (y3 - y1)*dx1)/denom
+    local u = ((x2 - x1)*dy1 - (y2 - y1)*dx1)/denom
     if u > 1 or u < 0 then return 1 end
-    return ((x3 - x1)*dy2 - (y3 - y1)*dx2)/denom
+    return ((x2 - x1)*dy2 - (y2 - y1)*dx2)/denom
 end
 
 local function lineCircleIntersect(x, y, dx, dy, xc, yc, r)
@@ -87,12 +87,12 @@ local GoalCollider = class {
     doCollision = function(self, state, dirx, diry, t)
         state[1] = state[1] + dirx*t
         state[2] = state[2] + diry*t
-        os.pushEvent("scored")
+        os.queueEvent("scored", state[1]<82 and game.p2 or game.p1)
         return 0, 0
     end
 }
 
-local PhysCircleComponent = {
+local PhysCircleComponent = class {
     init = function(self, radius, linear, angular)
 		self.state = {0, 0, 0, 0, 0, 0}
         self.radius = radius

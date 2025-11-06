@@ -47,7 +47,7 @@ Image = class {
 		for line in f:lines() do
 			if self.w==0 then self.w=#line end
 			if self.w~=#line then error("Image dimension inconsistent!") end
-			for pos, blit in string.gmatch(string.lower(line), "()[0-9a-f]+") do
+			for pos, blit in string.gmatch(string.lower(line), "()([0-9a-f]+)") do
 				self.blits[#self.blits + 1] = {x = pos-1, y=self.h, blit=Blit(" ","0",blit)}
 			end
 			self.h = self.h + 1
@@ -60,11 +60,11 @@ Image = class {
 
 		if flipped then
 			for _, v in ipairs(self.blits) do
-				v:blit(periph, self.w-v.w-v.x, y+v.y, flipped)
+				v.blit:blit(periph, x+self.w-v.blit.w-v.x, y+v.y, flipped)
 			end
 		else
 			for _, v in ipairs(self.blits) do
-				v:blit(periph, x+v.x, y+v.y, flipped)
+				v.blit:blit(periph, x+v.x, y+v.y, flipped)
 			end
 		end
 	end,
@@ -72,7 +72,7 @@ Image = class {
 		local ret = Image()
 		ret.w, ret.h, ret.ox, ret.oy = self.w, self.h, self.ox, self.oy
 		for i, v in ipairs(self.blits) do
-			ret.blits[i] = v:swapPallete(from, to)
+			ret.blits[i] = {x = v.x, y=v.y, blit = v.blit:swapPallete(from, to)}
 		end
 		return ret
 	end
@@ -163,7 +163,7 @@ Monitor = class {
 		self.periph.clear()
 	end,
 
-	draw = function(self, drawable, x, y, flipped)
+	blit = function(self, drawable, x, y, flipped)
 		drawable:blit(self.periph, x, y, flipped)
 	end,
 }

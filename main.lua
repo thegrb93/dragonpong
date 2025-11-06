@@ -5,26 +5,26 @@ local phys = require("phys")
 
 local dt = 0.1
 local screenToPhysY, physToScreenY = 47/21, 21/47
-local scrw, scrh = 168, 89
+local scrw, scrh = 164, 81
 local gamew, gameh = scrw, screenToPhysY*scrh
 local Images = {
-	Ball = gfx.ImageAnimated("DragonPong/ball", 1),
-	BallOpen = gfx.ImageAnimated("DragonPong/ball_open", 1),
-	BallCrying = gfx.ImageAnimated("DragonPong/ball_crying", 1),
-	DragonRed = gfx.ImageAnimated("DragonPong/dragon", 1),
-	DragonRedWin = gfx.ImageAnimated("DragonPong/dragonwin", 1),
-	DragonRedLose = gfx.ImageAnimated("DragonPong/dragonlose", 1),
-	CursorRed = gfx.Image("DragonPong/cursor"),
-	Score = gfx.ImageAnimated("DragonPong/score", 2),
-	Background = gfx.Image("DragonPong/background"),
-	ClickReady = gfx.Text("Click screen to ready!", "1", "0"),
-	Ready = gfx.Text("Ready!", "1", "0"),
-	Winner = gfx.Text("Winner!", "1", "0")
+	Egg = gfx.ImageAnimated("dragonpong/img/egg", 1),
+	EggOpen = gfx.ImageAnimated("dragonpong/img/egg_open", 1),
+	EggCrying = gfx.ImageAnimated("dragonpong/img/egg_crying", 1),
+	DragonRed = gfx.ImageAnimated("dragonpong/img/dragon", 1),
+	DragonRedWin = gfx.ImageAnimated("dragonpong/img/dragon_win", 1),
+	DragonRedLose = gfx.ImageAnimated("dragonpong/img/dragon_lose", 1),
+	CursorRed = gfx.Image("dragonpong/img/cursor"),
+	Score = gfx.ImageAnimated("dragonpong/img/score", 2),
+	Background = gfx.Image("dragonpong/img/board"),
+	ClickReady = gfx.Blit("Click screen to ready!", "0", "f"),
+	Ready = gfx.Blit("Ready!", "0", "f"),
+	Winner = gfx.Blit("Winner!", "0", "f")
 }
-Images.DragonGreen = Images.DragonRed:palleteSwap("3","6")
-Images.DragonGreenWin = Images.DragonRedWin:palleteSwap("3","6")
-Images.DragonGreenLose = Images.DragonRedLose:palleteSwap("3","6")
-Images.CursorGreen = Images.CursorRed:palleteSwap("3","6")
+Images.DragonGreen = Images.DragonRed:swapPallete("e","d")
+Images.DragonGreenWin = Images.DragonRedWin:swapPallete("e","d")
+Images.DragonGreenLose = Images.DragonRedLose:swapPallete("e","d")
+Images.CursorGreen = Images.CursorRed:swapPallete("e","d")
 
 local function boardColliders(colliders, r, p1, p2)
 	local wSize = 4
@@ -141,9 +141,9 @@ Ball = class {
 		local radius = 6
 		self.phys = phys.PhysCircleComponent(radius, 1, 1)
 		boardColliders(self.phys.colliders, radius, true, true)
-		self.egg = Images.Ball:new("rate", 1)
-		self.egg_opening = Images.BallOpen:new("frame", {5}, false)
-		self.egg_crying = Images.BallCrying:new("frame", {5})
+		self.egg = Images.Egg:new("rate", 1)
+		self.egg_opening = Images.EggOpen:new("frame", {5}, false)
+		self.egg_crying = Images.EggCrying:new("frame", {5})
 	end,
 	reset = function(self)
 		self.phys:set(gamew/2,gameh/2,0,0,0,0)
@@ -183,7 +183,7 @@ Pong = class {
 	init = function(self)
 		game = self
 		self.timers = {}
-		self.monitor = gfx.Monitor("top", 0, 0, 168, 81, 0.5)
+		self.monitor = gfx.Monitor("left", 0, 0, 164, 81, 0.5)
 		self.p1 = Paddle(true, false)
 		self.p2 = Paddle(false, true)
 		self.ball = Ball()
@@ -214,14 +214,13 @@ Pong = class {
 	thinkSetup = function(self)
 		if self.p1.ready and self.p2.ready then
 			self:addtimer(1, function() self:start() end)
-			self.think = thinkAll
+			self.think = self.thinkAll
 		end
 		self:thinkAll()
 	end,
 
 	thinkAll = function(self)
-		self.monitor:blit(Images.Background, 0, 0)
-		self.score:think()
+		self.monitor:blit(Images.Background, scrw*0.5, scrh*0.5)
 		self.p1:think()
 		self.p2:think()
 		self.ball:think()
@@ -263,6 +262,7 @@ Pong = class {
 	end
 }
 
-Pong()
+print(xpcall(Pong, debug.traceback))
+
 
 

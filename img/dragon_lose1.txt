@@ -1,0 +1,22 @@
+                               
+            c                  
+            c                  
+            cccccc             
+            fffcccceeee        
+               ffeeeeeee       
+              eeeeeeef0ee      
+ e        fee efeeeeeffeeeeeee 
+ fe      feefeeffeeeeeeeeeefef 
+ fee    feefeeeeefffeeeeeeeeee 
+  fee  feefeeefeeeeeeee    f f 
+   feefeefeeffeeeeefeeef       
+    fefeeeefeeeefeefeeef       
+     feeeeffeeeeffeefef        
+     eeeefffffeeefeefef        
+    eeefff   feeeeffee         
+    eeff     feeeeeeee         
+    eff    ffeeee feee         
+    ff     feeee  fee          
+            ee     f f         
+           f f                 
+                               
