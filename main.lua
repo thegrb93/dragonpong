@@ -4,7 +4,7 @@ local gfx = require("gfx")
 local phys = require("phys")
 
 local dt = 0.1
-local screenToPhysY, physToScreenY = 47/21, 21/47
+local screenToPhysY, physToScreenY = 41/27, 27/41
 local scrw, scrh = 164, 81
 local gamew, gameh = scrw, screenToPhysY*scrh
 local Images = {
