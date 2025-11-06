@@ -102,6 +102,10 @@ local FrameCounterAdvance = class {
 			end
 		end
 	end,
+	reset = function(self)
+		self.framei = 1
+		self.counter = 0
+	end,
 	blit = function(self, periph, x, y, flipped)
 		self.frames[self.framei]:blit(periph, x, y, flipped)
 	end
@@ -119,6 +123,9 @@ local RateAdvance = class {
 		else
 			self.t = math.min(self.t + dt/self.animtime, 0.999999999999)
 		end
+	end,
+	reset = function(self)
+		self.t = 0
 	end,
 	blit = function(self, periph, x, y, flipped)
 		self.frames[math.floor(self.t*#self.frames)+1]:blit(periph, x, y, flipped)

@@ -50,7 +50,7 @@ end
 
 local Paddle, Ball, Pong
 
-local pk, vk = 100, math.sqrt(4*100)
+local pk, vk = 10, math.sqrt(4*10)
 local function pd(px, py, vx, vy)
 	return pk*px + vk*vx, pk*py + vk*vy
 end
@@ -87,7 +87,7 @@ Paddle = class {
 		self.dragonWin.t = 0
 		self.dragonLose.t = 0
 	end,
-	score = function(self, scored)
+	scored = function(self, scored)
 		self.frozen = true
 		if scored then
 			self.sprite = self.dragonWin
@@ -150,7 +150,7 @@ Ball = class {
 		self.frozen = true
 		self.sprite = self.egg
 	end,
-	score = function(self)
+	scored = function(self)
 		self.frozen = true
 		self.sprite = self.egg_opening
 		self.sprite:reset()
@@ -183,7 +183,7 @@ Pong = class {
 	init = function(self)
 		game = self
 		self.timers = {}
-		self.monitor = gfx.Monitor("left", 0, 0, 164, 81, 0.5)
+		self.monitor = gfx.Monitor("left", 0, 0, scrw, scrh, 0.5)
 		self.p1 = Paddle(true, false)
 		self.p2 = Paddle(false, true)
 		self.ball = Ball()
@@ -205,9 +205,9 @@ Pong = class {
 	end,
 
 	score = function(self, player)
-		self.p1:score(player == self.p1)
-		self.p2:score(player == self.p2)
-		self.ball:score()
+		self.p1:scored(player == self.p1)
+		self.p2:scored(player == self.p2)
+		self.ball:scored()
 		self:addtimer(5, function() self:reset() end)
 	end,
 
