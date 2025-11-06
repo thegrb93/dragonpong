@@ -62,14 +62,14 @@ Paddle = class {
 		boardColliders(self.phys.colliders, radius, p1, p2)
 		if p1 then
 			self.startx, self.starty, self.startflipped = gamew/4, gameh/2, false
-			self.dragon = Images.DragonGreen:new("rate", 1)
+			self.dragon = Images.DragonGreen:new("frame", {5})
 			self.dragonWin = Images.DragonGreenWin:new("frame", {5})
 			self.dragonLose = Images.DragonGreenLose:new("frame", {5})
 			self.cursor = Images.CursorGreen
 		end
 		if p2 then
 			self.startx, self.starty, self.startflipped = gamew*3/4, gameh/2, true
-			self.dragon = Images.DragonRed:new("rate", 1)
+			self.dragon = Images.DragonRed:new("frame", {5})
 			self.dragonWin = Images.DragonRedWin:new("frame", {5})
 			self.dragonLose = Images.DragonRedLose:new("frame", {5})
 			self.cursor = Images.CursorRed
@@ -111,7 +111,6 @@ Paddle = class {
 			flapspeed = dt*(1 + math.min(1, math.sqrt(state[4]^2 + state[5]^2)))
 		end
 
-		self.sprite:add(flapspeed)
 		if state[4] < -0.5 then
 			self.flipped = true
 		elseif state[4] > 0.5 then
@@ -120,6 +119,7 @@ Paddle = class {
 
 		game.monitor:blit(self.cursor, self.tx, self.ty*physToScreenY)
 		game.monitor:blit(self.sprite, state[1], state[2]*physToScreenY, self.flipped)
+		self.sprite:add(flapspeed)
 
 		if self.frozen then
 			local scorex, scorey = state[1]-6, (state[2]-10)*physToScreenY
@@ -153,10 +153,10 @@ Ball = class {
 	score = function(self)
 		self.frozen = true
 		self.sprite = self.egg_opening
-		self.sprite.t = 0
-		game:addtimer(self.sprite.tlen, function()
+		self.sprite:reset()
+		game:addtimer(dt*5, function()
 			self.sprite = self.egg_crying
-			self.sprite.t = 0
+			self.sprite:reset()
 		end)
 	end,
 	think = function(self)
@@ -169,11 +169,13 @@ Ball = class {
 
 		if self.sprite == self.egg then
 			self.sprite.t = state[3]
-		else
-			self.sprite:add(dt)
 		end
 
 		game.monitor:blit(self.sprite, state[1], state[2]*physToScreenY)
+		
+		if self.sprite ~= self.egg then
+			self.sprite:add(1)
+		end
 	end,
 }
 
@@ -262,4 +264,5 @@ Pong = class {
 }
 
 Pong()
+
 
