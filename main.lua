@@ -80,12 +80,11 @@ Paddle = class {
 	end,
 	reset = function(self)
 		self.phys:set(self.startx,self.starty,0,0,0,0)
+		self.tx, self.ty = self.startx, self.starty
 		self.flipped = self.startflipped
 		self.frozen = true
 		self.sprite = self.dragon
-		self.dragon.t = 0
-		self.dragonWin.t = 0
-		self.dragonLose.t = 0
+		self.sprite:reset()
 	end,
 	scored = function(self, scored)
 		self.frozen = true
@@ -95,6 +94,7 @@ Paddle = class {
 		else
 			self.sprite = self.dragonLose
 		end
+		self.sprite:reset()
 	end,
 	clicked = function(self, x, y)
 		self.tx, self.ty = x, y
@@ -204,11 +204,21 @@ Pong = class {
 		self.ball.frozen = false
 	end,
 
-	score = function(self, player)
+	scored = function(self, player)
 		self.p1:scored(player == self.p1)
 		self.p2:scored(player == self.p2)
 		self.ball:scored()
-		self:addtimer(5, function() self:reset() end)
+		if self.p1.score == 3 or self.p2.score == 3 then
+			self:addtimer(10, function()
+				self.p1.ready = false
+				self.p2.ready = false
+				self.p1.score = 0
+				self.p2.score = 0
+				self:reset()
+			end)
+		else
+			self:addtimer(5, function() self:reset() end)
+		end
 	end,
 
 	thinkSetup = function(self)
@@ -256,7 +266,7 @@ Pong = class {
 			elseif event == "monitor_touch" then
 				self:clicked(p2, p3)
 			elseif event == "scored" then
-				self:score(p1)
+				self:scored(p1)
 			end
 		end
 	end
