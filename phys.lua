@@ -27,6 +27,24 @@ local function reflect(dx, dy, nx, ny)
     return dx-2*dot*nx, dy-2*dot*ny
 end
 
+local function reflectMomentum(vx, vy, dotnormx, dotnormy, I)
+    return vx + 2*I*dotnormx, vy + 2*I*dotnormy
+end
+
+local function reflectMomentumAngular(vx, vy, va, tx, ty, circumference, linearInertia, angularInertia)
+    local IT = linearInertia + angularInertia
+    local tx, ty = -nx, ny
+    va = va*circumference
+    local avx, avy = va*tx, va*ty
+    local tandot = vx*tx + vy*ty
+    local vtandotx, vtandoty = tandot*tx + avx, tandot*ty + avy
+
+    vx, vy = reflectMomentum(vx, vy, vtandotx, vtandoty, angularInertia/IT)
+    avx, avy = reflectMomentum(avx, avy, -vtandotx, -vtandoty, linearInertia/IT)
+    va = (avx*tx + avy*ty)/circumference
+    return vx, vy, va
+end
+
 local WallCollider = class {
     init = function(self, x1, y1, x2, y2)
         self.x = x1
@@ -42,7 +60,7 @@ local WallCollider = class {
     checkCollision = function(self, state, dirx, diry)
         return lineLineIntersect(state[1], state[2], dirx, diry, self.x, self.y, self.dx, self.dy)
     end,
-    doCollision = function(self, state, dirx, diry, t)
+    doCollision = function(self, body, state, dirx, diry, t)
         state[1] = state[1] + dirx*t
         state[2] = state[2] + diry*t
 
@@ -50,6 +68,11 @@ local WallCollider = class {
         dirx, diry = newscale*dirx, newscale*diry
         dirx, diry = reflect(dirx, diry, self.nx, self.ny)
         state[4], state[5] = reflect(state[4], state[5], self.nx, self.ny)
+
+        if body.rotating then
+            state[4], state[5], state[6] = reflectMomentumAngular(state[4], state[5], state[6], -self.ny, self.nx, 2*math.pi*body.radius, body.linearInertia, body.angularInertia)
+        end
+    
         return dirx, diry
     end
 }
@@ -63,7 +86,7 @@ local CircleCollider = class {
     checkCollision = function(self, state, dirx, diry)
         return lineCircleIntersect(state[1], state[2], dirx, diry, self.x, self.y, self.r)
     end,
-    doCollision = function(self, state, dirx, diry, t)
+    doCollision = function(self, body, state, dirx, diry, t)
         state[1] = state[1] + dirx*t
         state[2] = state[2] + diry*t
         
@@ -76,6 +99,11 @@ local CircleCollider = class {
 
         dirx, diry = reflect(dirx, diry, nx, ny)
         state[4], state[5] = reflect(state[4], state[5], nx, ny)
+        
+        if body.rotating then
+            state[4], state[5], state[6] = reflectMomentumAngular(state[4], state[5], state[6], -ny, nx, 2*math.pi*body.radius, body.linearInertia, body.angularInertia)
+        end
+
         return dirx, diry
     end
 }
@@ -84,18 +112,20 @@ local CircleCollider = class {
 local GoalCollider = class {
     init = WallCollider.init,
     checkCollision = WallCollider.checkCollision,
-    doCollision = function(self, state, dirx, diry, t)
+    doCollision = function(self, body, state, dirx, diry, t)
         state[1] = state[1] + dirx*t
         state[2] = state[2] + diry*t
-        os.queueEvent("scored", state[1]<82 and game.p2 or game.p1)
+        os.queueEvent("scored", body.parent)
         return 0, 0
     end
 }
 
 local PhysCircleComponent = class {
-    init = function(self, radius, linear, angular)
-		self.state = {0, 0, 0, 0, 0, 0}
+    init = function(self, parent, rotating, radius, linear, angular)
+        self.parent = parent
+        self.rotating = rotating
         self.radius = radius
+		self.state = {0, 0, 0, 0, 0, 0}
         self.linearInertia = linear
         self.angularInertia = angular
         self.colliders = {}
@@ -110,8 +140,9 @@ local PhysCircleComponent = class {
         state[4], state[5], state[6] = state[4]+fx*dt, state[5]+fy*dt, state[6]+fa*dt
     
         local dirx, diry = state[4]*dt, state[5]*dt
-        for i=1, 10 do
-            if math.abs(dirx)<1e-8 and math.abs(diry)<1e-8 then
+        local i = 1
+        while true do
+            if i==10 or (math.abs(dirx)<1e-8 and math.abs(diry)<1e-8) then
                 dirx, diry = 0, 0
                 break
             end
@@ -123,7 +154,8 @@ local PhysCircleComponent = class {
                 if t and t<tmin then tmin=t collider=v end
             end
             if not collider then break end
-            dirx, diry = collider:doCollision(state, dirx, diry, tmin)
+            dirx, diry = collider:doCollision(self, state, dirx, diry, tmin)
+            i = i + 1
         end
         state[1], state[2], state[3] = state[1] + dirx, state[2] + diry, (state[3]+state[6]*dt)%1
     end,
@@ -137,13 +169,44 @@ local PhysCircleComponent = class {
 			if normdot<0 then
 				local vnormx, vnormy = normdot*dx/distSqr, normdot*dy/distSqr
 
-				local tandot = dvx*(-dy) + dvy*dx - self.radius*x1[3]*math.sqrt(distSqr)
-				local vtanx, vtany = tandot*(x1[2] - x2[2])/distSqr, tandot*dx/distSqr
+                -- First do the normal component reflection
+                local IT = self.linearInertia + other.linearInertia
+				x1[4], x1[5] = reflectMomentum(x1[4], x1[5], vnormx, vnormy, other.linearInertia/IT)
+				x2[4], x2[5] = reflectMomentum(x2[4], x2[5], -vnormx, -vnormy, self.linearInertia/IT)
+                
+                if self.rotating or other.rotating then
+                    local dist = math.sqrt(distSqr)
+                    local circum = 2*math.pi*self.radius
+                    local I1, I2, I3, I4
+                    local IT1 = self.angularInertia + self.linearInertia + other.linearInertia
+                    if self.rotating then
+                        I1 = (self.angularInertia + self.linearInertia)/IT1
+                        I2 = other.linearInertia/IT1
+                        local IT2 = self.angularInertia + self.linearInertia
+                        I3 = self.linearInertia/IT2
+                        I4 = self.angularInertia/IT2
+                    else
+                        x1, x2 = x2, x1`
+                        dx, dy = -dx, -dy
+                        dvx, dvy = -dvx, -dvy
+                        I1 = (other.angularInertia + other.linearInertia)/IT1
+                        I2 = self.linearInertia/IT1
+                        local IT2 = other.angularInertia + other.linearInertia
+                        I3 = other.linearInertia/IT2
+                        I4 = other.angularInertia/IT2
+                    end
+                    local tx, ty = -dy/dist, dx/dist
+                    local angVel = x1[6]*circum
+                    local angVelx, angVely = angVel*tx, angVel*ty
+                    local tandot = dvx*tx + dvy*ty
+                    local vtandotx, vtandoty = tandot*tx + angVelx, tandot*ty + angVely
+                    local vx2, vy2 = reflectMomentum(x1[4]+angVelx, x1[5]+angVely, vtandotx, vtandoty, I2)
+                    x2[4], x2[5] = reflectMomentum(x2[4], x2[5], -vtandotx, -vtandoty, I1)
 
-				local m1, m2, m3, m4 = 5/(5+1), 1/(5+1), 1/(1+4), 4/(1+4)
-				x1[4], x1[5] = x1[4] + 2*m1*(vnormx-m3*vtanx), x1[5] + 2*m1*(vnormy-m3*vtany)
-				x2[4], x2[5] = x2[4] - 2*m2*(vnormy-m3*vtany), x2[5] - 2*m2*(vnormy-m3*vtany)
-				x1[3] = x1[3] + 2*m4*math.sqrt(vtanx^2+vtany^2)
+                    x1[4], x1[5] = reflectMomentum(x1[4], x1[5], vx2, vy2, I4)
+                    angVelx, angVely = reflectMomentum(angVelx, angVely, -vx2, -vy2, I3)
+                    x1[6] = (angVelx*tx + angVely*ty)/circum
+                end
 			end
 		end
     end
