@@ -58,7 +58,7 @@ end
 Paddle = class {
 	init = function(self, p1, p2)
 		local radius = 10
-		self.phys = phys.PhysCircleComponent(radius, 10, 10)
+		self.phys = phys.PhysCircleComponent(self, false, radius, 10, 10)
 		boardColliders(self.phys.colliders, radius, p1, p2)
 		if p1 then
 			self.startx, self.starty, self.startflipped = gamew/4, gameh/2, false
@@ -139,7 +139,7 @@ Paddle = class {
 Ball = class {
 	init = function(self)
 		local radius = 6
-		self.phys = phys.PhysCircleComponent(radius, 1, 1)
+		self.phys = phys.PhysCircleComponent(self, false, radius, 1, 1)
 		boardColliders(self.phys.colliders, radius, true, true)
 		self.egg = Images.Egg:new("rate", 1)
 		self.egg_opening = Images.EggOpen:new("frame", {5}, false)
@@ -148,6 +148,7 @@ Ball = class {
 	reset = function(self)
 		self.phys:set(gamew/2,gameh/2,0,0,0,0)
 		self.frozen = true
+		self.speedCounter = 0
 		self.sprite = self.egg
 	end,
 	scored = function(self)
@@ -162,8 +163,15 @@ Ball = class {
 	think = function(self)
 		local state = self.phys.state
 		if not self.frozen then
-			local lift = 0.1*state[6]*math.sqrt(state[4]^2 + state[5]^2)
-			local fx, fy = (-state[5] - state[4])*lift, (state[4] - state[5])*lift
+			local speed = math.sqrt(state[4]^2 + state[5]^2)
+			local maxSpeed = 10+self.speedCounter*0.5
+
+			-- Generate some resistance if over max speed
+			local resist = math.max(speed - maxSpeed, 0)*0.5
+			local lift = 0.1*state[6]*speed
+
+			local fx = (-state[5] - state[4])*lift - state[4]*resist
+			local fy = (state[4] - state[5])*lift - state[5]*resist
 			self.phys:step(fx, fy, 0, dt)
 		end
 
@@ -176,6 +184,7 @@ Ball = class {
 		if self.sprite ~= self.egg then
 			self.sprite:add(1)
 		end
+		self.speedCounter = self.speedCounter + 1
 	end,
 }
 
@@ -273,6 +282,7 @@ Pong = class {
 }
 
 print(xpcall(Pong, debug.traceback))
+
 
 
 
