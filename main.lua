@@ -58,7 +58,7 @@ end
 Paddle = class {
 	init = function(self, p1, p2)
 		local radius = 10
-		self.phys = phys.PhysCircleComponent(self, false, radius, 10, 10)
+		self.phys = phys.PhysCircleComponent(self, false, radius, 3, 3)
 		boardColliders(self.phys.colliders, radius, p1, p2)
 		if p1 then
 			self.startx, self.starty, self.startflipped = gamew/4, gameh/2, false
@@ -213,9 +213,10 @@ Pong = class {
 		self.ball.frozen = false
 	end,
 
-	scored = function(self, player)
-		self.p1:scored(player == self.p1)
-		self.p2:scored(player == self.p2)
+	scored = function(self)
+		local p1scored = self.ball.phys.state[1] > gamew/2
+		self.p1:scored(p1scored)
+		self.p2:scored(not p1scored)
 		self.ball:scored()
 		if self.p1.score == 3 or self.p2.score == 3 then
 			self:addtimer(10, function()
@@ -275,7 +276,7 @@ Pong = class {
 			elseif event == "monitor_touch" then
 				self:clicked(p2, p3)
 			elseif event == "scored" then
-				self:scored(p1)
+				self:scored()
 			end
 		end
 	end

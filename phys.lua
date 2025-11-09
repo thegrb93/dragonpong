@@ -17,7 +17,7 @@ local function lineCircleIntersect(x, y, dx, dy, xc, yc, r)
     if discrim<=0 then return 1 end
     discrim = math.sqrt(discrim)
     local t = (-b - discrim) / (2*a)
-    if t<0 and ((xc - x)^2 + (yc - y)^2)>r^2 then return 1 end
+    if t<0 then return 1 end
     return t
 end
 
@@ -115,7 +115,7 @@ local GoalCollider = class {
     doCollision = function(self, body, state, dirx, diry, t)
         state[1] = state[1] + dirx*t
         state[2] = state[2] + diry*t
-        os.queueEvent("scored", body.parent)
+        os.queueEvent("scored")
         return 0, 0
     end
 }
@@ -186,7 +186,7 @@ local PhysCircleComponent = class {
                         I3 = self.linearInertia/IT2
                         I4 = self.angularInertia/IT2
                     else
-                        x1, x2 = x2, x1`
+                        x1, x2 = x2, x1
                         dx, dy = -dx, -dy
                         dvx, dvy = -dvx, -dvy
                         I1 = (other.angularInertia + other.linearInertia)/IT1
